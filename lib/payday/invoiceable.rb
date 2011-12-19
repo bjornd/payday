@@ -27,7 +27,7 @@ module Payday::Invoiceable
   # The tax for this invoice, as a BigDecimal
   def tax
     if defined?(tax_rate)
-      calculated = subtotal * tax_rate
+      calculated = (subtotal - discount) * tax_rate
       return 0 if calculated < 0
       calculated
     else
@@ -45,9 +45,15 @@ module Payday::Invoiceable
     end
   end
   
+  def discount
+    sum = 0
+    discounts.each { |discount| sum += discount.calculate(subtotal) }
+    sum > subtotal ? 0 : sum
+  end
+  
   # Calculates the total for this invoice.
   def total
-    subtotal + tax + shipping
+    subtotal + tax + shipping - discount
   end
   
   def overdue?

@@ -3,6 +3,18 @@
 module Payday::LineItemable
   # Returns the total amount for this {LineItemable}, or +price * quantity+
   def amount
+    amount_subtotal - discount
+  end
+  
+  def amount_subtotal
     price * quantity
+  end
+  
+  def discount
+    if discounts.empty?
+      0
+    else
+      amount_subtotal - Payday::Discount.apply_discounts(quantity, amount_subtotal, discounts).last[:amount]
+    end
   end
 end

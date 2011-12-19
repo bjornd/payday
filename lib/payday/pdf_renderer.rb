@@ -144,22 +144,36 @@ module Payday
       end
 
       def self.line_items_table(invoice, pdf)
+        colors = ["dfdfdf", "ffffff"]
+        row_colors = []
+        current_color_index = 0
+        
         table_data = []
         table_data << [bold_cell(pdf, I18n.t('payday.line_item.description', :default => "Description"), :borders => []),
             bold_cell(pdf, I18n.t('payday.line_item.unit_price', :default => "Unit Price"), :align => :center, :borders => []),
             bold_cell(pdf, I18n.t('payday.line_item.quantity', :default => "Quantity"), :align => :center, :borders => []),
             bold_cell(pdf, I18n.t('payday.line_item.amount', :default => "Amount"), :align => :center, :borders => [])]
         invoice.line_items.each do |line|
+          row_colors << colors[current_color_index]
           table_data << [line.description,
                          (line.display_price || number_to_currency(line.price, invoice)),
                          (line.display_quantity || BigDecimal.new(line.quantity.to_s).to_s("F")),
-                         number_to_currency(line.amount, invoice)]
+                         number_to_currency(line.amount_subtotal, invoice)]
+          discounts_sequence = Discount.apply_discounts(line.quantity, line.amount_subtotal, line.discounts)
+          line.discounts.each_with_index do |discount, i|
+            row_colors << colors[current_color_index]
+            table_data << ['Discount #'+(i+1).to_s,
+                           discount.description(invoice),
+                           BigDecimal.new(discounts_sequence[i][:quantity].to_s).to_s("F"),
+                           number_to_currency(discounts_sequence[i][:amount], invoice)]
+          end
+          current_color_index = current_color_index == 1 ? 0 : 1
         end
 
         pdf.move_cursor_to(pdf.cursor - 20)
         pdf.table(table_data, :width => pdf.bounds.width, :header => true,
             :cell_style => {:border_width => 0.5, :border_color => "cccccc", :padding => [5, 10]},
-            :row_colors => ["dfdfdf", "ffffff"]) do
+            :row_colors => row_colors) do
           # left align the number columns
           columns(1..3).rows(1..row_length - 1).style(:align => :right)
 
@@ -175,6 +189,17 @@ module Payday
         table_data = []
         table_data << [bold_cell(pdf, I18n.t('payday.invoice.subtotal', :default => "Subtotal:")),
             cell(pdf, number_to_currency(invoice.subtotal, invoice), :align => :right)]
+            
+        #render discounts
+        discounts_sequence = Discount.apply_discounts(10000, invoice.subtotal, invoice.discounts)
+        invoice.discounts.each_with_index do |discount, i|
+          if discounts_sequence[i]
+            table_data << [bold_cell(pdf,
+                "Discount #"+i.to_s),
+                cell(pdf, number_to_currency(discounts_sequence[i][:amount], invoice).to_s, :align => :right)]
+          end
+        end
+            
         if invoice.tax_rate > 0
           table_data << [bold_cell(pdf,
               invoice.tax_description.nil? ? I18n.t('payday.invoice.tax', :default => "Tax:") : invoice.tax_description),

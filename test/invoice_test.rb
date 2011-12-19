@@ -64,6 +64,21 @@ module Payday
 
       assert_equal BigDecimal.new("1243"), i.total
     end
+    
+    test "that the discounts are applied to total correctly" do
+      i = Invoice.new(:discounts => [Discount.new(:amount => 50)])
+
+      # $100 in Pants
+      i.line_items << LineItem.new(:price => 20, :quantity => 5, :description => "Pants")
+
+      # $30 in Shirts
+      i.line_items << LineItem.new(:price => 10, :quantity => 3, :description => "Shirts")
+
+      # $1000 in Hats
+      i.line_items << LineItem.new(:price => 5, :quantity => 200, :description => "Hats")
+
+      assert_equal BigDecimal.new("565"), i.total
+    end
 
     test "overdue? is false when past date and unpaid" do
       i = Invoice.new(:due_at => Date.today - 1)
@@ -122,13 +137,14 @@ module Payday
           :due_at => Date.civil(2011, 1, 22), #:paid_at => Date.civil(2012, 2, 22),
           :bill_to => "Alan Johnson\n101 This Way\nSomewhere, SC 22222",
           :ship_to => "Frank Johnson\n101 That Way\nOther, SC 22229",
-          :invoice_details => {"Ordered By:" => "Alan Johnson", "Paid By:" => "Dude McDude"})
+          :invoice_details => {"Ordered By:" => "Alan Johnson", "Paid By:" => "Dude McDude"},
+          :discounts => [Discount.new(:amount => 10), Discount.new(:kind => 'value', :amount => 50)])
 
       Payday::Config.default.company_details = "10 This Way\nManhattan, NY 10001\n800-111-2222\nawesome@awesomecorp.com"
 
-      30.times do
-        i.line_items << LineItem.new(:price => 20, :quantity => 5, :description => "Pants")
-        i.line_items << LineItem.new(:price => 10, :quantity => 3, :description => "Shirts")
+      1.times do
+        i.line_items << LineItem.new(:price => 20, :quantity => 5, :description => "Pants", :discounts => [Discount.new(:amount => 10)])
+        i.line_items << LineItem.new(:price => 10, :quantity => 3, :description => "Shirts", :discounts => [Discount.new(:kind => 'value', :amount => 10)])
         i.line_items << LineItem.new(:price => 5, :quantity => 200, :description => "Hats")
       end
 
