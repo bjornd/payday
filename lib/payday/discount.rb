@@ -12,9 +12,9 @@ module Payday
     def calculate(value)
       case kind
       when 'value'
-        amount
+        amount > value ? value : amount
       when 'percentage'
-        value * amount / 100
+        value * amount / 100.0
       when 'free'
         value
       end
@@ -34,11 +34,11 @@ module Payday
     def self.apply_discounts(quantity, amount, discounts)
       sequence = []
       discounts.each do |discount|
-        if discount.unit == 'bandwidth'
-          discount_amount = discount.calculate(line.amount_subtotal)
+        if discount.unit == 'quantity'
+          discount_amount = discount.calculate(amount)
           price = amount/quantity
-          quantity -= discount_amount
-          amount -= discount_amount*price
+          amount -= discount_amount
+          quantity -= discount_amount/price
         else
           amount -= discount.calculate(amount)
         end
