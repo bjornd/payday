@@ -58,6 +58,14 @@ module Payday::Invoiceable
     end
   end
   
+  def quantity_discount
+    if discounts.empty?
+      0
+    else
+      quantity - Payday::Discount.apply_discounts(quantity, subtotal, discounts).last[:quantity]
+    end
+  end
+  
   # Calculates the total for this invoice.
   def total
     subtotal + tax + shipping - discount

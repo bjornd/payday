@@ -87,6 +87,17 @@ module Payday
       i.line_items << LineItem.new(:price => 20, :quantity => 3, :description => "Shirts")
       
       assert_equal BigDecimal.new("120"), i.total
+      assert_equal BigDecimal.new("6"), i.quantity - i.quantity_discount
+    end
+    
+    test "that invoice returns correct values for discount and quantity discount" do
+      i = Invoice.new(:discounts => [Discount.new(:amount => 2, :kind => 'value', :unit => 'quantity')])
+
+      i.line_items << LineItem.new(:price => 20, :quantity => 5, :description => "Pants")
+      i.line_items << LineItem.new(:price => 20, :quantity => 3, :description => "Shirts")
+      
+      assert_equal BigDecimal.new("8"), i.quantity
+      assert_equal BigDecimal.new("2"), i.quantity_discount
     end
 
     test "overdue? is false when past date and unpaid" do
