@@ -24,6 +24,11 @@ module Payday::Invoiceable
     line_items.inject(BigDecimal.new("0")) { |result, item| result += item.amount }
   end
   
+  # Calculates the total quantity of invoice items
+  def quantity
+    line_items.inject(BigDecimal.new("0")) { |result, item| result += item.quantity - item.quantity_discount }
+  end
+  
   # The tax for this invoice, as a BigDecimal
   def tax
     if defined?(tax_rate)
@@ -46,9 +51,11 @@ module Payday::Invoiceable
   end
   
   def discount
-    sum = 0
-    discounts.each { |discount| sum += discount.calculate(subtotal) }
-    sum > subtotal ? 0 : sum
+    if discounts.empty?
+      0
+    else
+      subtotal - Payday::Discount.apply_discounts(quantity, subtotal, discounts).last[:amount]
+    end
   end
   
   # Calculates the total for this invoice.

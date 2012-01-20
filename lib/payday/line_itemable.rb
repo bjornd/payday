@@ -10,6 +10,14 @@ module Payday::LineItemable
     price * quantity
   end
   
+  def quantity_discount
+    if discounts.empty?
+      0
+    else
+      quantity - Payday::Discount.apply_discounts(quantity, amount_subtotal, discounts).last[:quantity]
+    end
+  end
+  
   def discount
     if discounts.empty?
       0

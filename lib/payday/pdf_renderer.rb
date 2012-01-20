@@ -160,10 +160,10 @@ module Payday
                          (line.display_quantity || BigDecimal.new(line.quantity.to_s).to_s("F")),
                          number_to_currency(line.amount_subtotal, invoice)]
           discounts_sequence = Discount.apply_discounts(line.quantity, line.amount_subtotal, line.discounts)
-          line.discounts.each_with_index do |discount, i|
+          discounts_sequence.each_with_index do |discount, i|
             row_colors << colors[current_color_index]
             table_data << ['Discount #'+(i+1).to_s,
-                           discount.description(invoice),
+                           line.discounts[i].description(invoice),
                            BigDecimal.new(discounts_sequence[i][:quantity].to_s).to_s("F"),
                            number_to_currency(discounts_sequence[i][:amount], invoice)]
           end
@@ -191,7 +191,7 @@ module Payday
             cell(pdf, number_to_currency(invoice.subtotal, invoice), :align => :right)]
             
         #render discounts
-        discounts_sequence = Discount.apply_discounts(10000, invoice.subtotal, invoice.discounts)
+        discounts_sequence = Discount.apply_discounts(invoice.quantity, invoice.subtotal, invoice.discounts)
         invoice.discounts.each_with_index do |discount, i|
           if discounts_sequence[i]
             table_data << [bold_cell(pdf,

@@ -58,5 +58,13 @@ module Payday
       sequence = Discount.apply_discounts(10, 100, discounts)
       assert_equal [{:amount => 90, :quantity => 10}, {:amount => 81, :quantity => 9}], sequence
     end
+    
+    test "that quantity value discount is aplied properly" do
+      discounts = [
+        Discount.new(:kind => 'value', :unit => 'quantity', :amount => 2)
+      ]
+      sequence = Discount.apply_discounts(10, 100, discounts)
+      assert_equal [{:amount => 80, :quantity => 8}], sequence
+    end
   end
 end

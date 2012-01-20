@@ -35,10 +35,10 @@ module Payday
       sequence = []
       discounts.each do |discount|
         if discount.unit == 'quantity'
-          discount_amount = discount.calculate(amount)
+          discount_quantity = discount.calculate(quantity)
           price = amount/quantity
-          amount -= discount_amount
-          quantity -= discount_amount/price
+          quantity -= discount_quantity
+          amount -= discount_quantity*price
         else
           amount -= discount.calculate(amount)
         end
